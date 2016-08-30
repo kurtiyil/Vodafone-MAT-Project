@@ -64,7 +64,6 @@ public class VodafoneMAT {
 	//	RegisteredDeviceEventPublish.simulateDevice(org, type, deviceID, token, password);
      new RegisteredDeviceEventPublish(org, type, deviceid, token, authtoken,(new Double(Math.random()*10)).intValue()+1).run();
 	}
-	
 }
 
 public static void Devicetype(String devicetype, String org){
