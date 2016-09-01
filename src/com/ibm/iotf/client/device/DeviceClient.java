@@ -205,10 +205,17 @@ public class DeviceClient extends AbstractClient {
 		//Generate a JSON object of the event to be published
 	//	JsonObject event = new JsonObject();
 		
-		((JsonObject)data).addProperty("temp", temp);
-		((JsonObject)data).addProperty("pressure", pressure);
-		((JsonObject)data).addProperty("Energy_Consumption", energy_consumption);
-		((JsonObject)data).addProperty("water_usage", water_usage);
+		((JsonObject)data).addProperty("PowerSupplyVoltage", "0");
+		((JsonObject)data).addProperty("BatteryVoltage", "0");
+		((JsonObject)data).addProperty("Satelites", "0");
+		((JsonObject)data).addProperty("PositionMethod", "GPS");
+		((JsonObject)data).addProperty("Date", "1/10/2014 5:29:52");
+		((JsonObject)data).addProperty("isRoaming","");
+		((JsonObject)data).addProperty("LatX", "38,0755500000");
+		((JsonObject)data).addProperty("LongY", "23,7784333333");
+		((JsonObject)data).addProperty("LocationString", "Phase 1 test");
+		((JsonObject)data).addProperty("DeviceProfile", "GPS ON");
+		((JsonObject)data).addProperty("PacketType", "GPRS");
 			
 		JsonElement dataElement = gson.toJsonTree(data);
 		

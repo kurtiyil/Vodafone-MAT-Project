@@ -16,7 +16,7 @@ import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.impl.StdSchedulerFactory;
 	
-	@WebServlet("/AlarmJobListener")
+	@WebServlet("/VodafoneMATListener")
 	public class VodafoneMATListener extends HttpServlet implements ServletContextListener {
 	    private static final long serialVersionUID = 1L;
 	    private static final SchedulerFactory schedulerFactory = new StdSchedulerFactory();
@@ -36,7 +36,7 @@ import org.quartz.impl.StdSchedulerFactory;
 	            
 	            Trigger trigger = TriggerBuilder.newTrigger()
 	                    .withIdentity("VodafoneMATTriggerTrigger", "AlarmJobTriggerGroup")
-	                    .withSchedule(CronScheduleBuilder.cronScheduleNonvalidatedExpression("0 0/1 * * * ?"))
+	                    .withSchedule(CronScheduleBuilder.cronScheduleNonvalidatedExpression("0 0/5 * * * ?"))
 	                    .build();
 	            scheduler = schedulerFactory.getScheduler();
 	            scheduler.start();
