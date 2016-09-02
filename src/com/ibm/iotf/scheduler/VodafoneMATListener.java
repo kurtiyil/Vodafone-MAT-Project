@@ -1,5 +1,10 @@
 package com.ibm.iotf.scheduler;
 
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.Map.Entry;
+
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebServlet;
@@ -15,6 +20,13 @@ import org.quartz.SchedulerFactory;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.impl.StdSchedulerFactory;
+
+import com.cloudant.client.api.Database;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 	
 	@WebServlet("/VodafoneMATListener")
 	public class VodafoneMATListener extends HttpServlet implements ServletContextListener {
@@ -32,11 +44,9 @@ import org.quartz.impl.StdSchedulerFactory;
 	            JobDetail job = JobBuilder.newJob(VodafoneMATTrigger.class)
 	                    .withIdentity("VodafoneMATTrigger", "AlarmJobTriggerGroup").build();
 	            
-	            
-	            
 	            Trigger trigger = TriggerBuilder.newTrigger()
 	                    .withIdentity("VodafoneMATTriggerTrigger", "AlarmJobTriggerGroup")
-	                    .withSchedule(CronScheduleBuilder.cronScheduleNonvalidatedExpression("0 0/5 * * * ?"))
+	                    .withSchedule(CronScheduleBuilder.cronScheduleNonvalidatedExpression(readCrontabfromCloudant()))
 	                    .build();
 	            scheduler = schedulerFactory.getScheduler();
 	            scheduler.start();
@@ -60,5 +70,65 @@ import org.quartz.impl.StdSchedulerFactory;
 	        } catch (Exception exception) {
 	            System.out.println(exception.getMessage());
 	        }
+	    }
+	   
+	    public String readCrontabfromCloudant()
+	    {
+			Database db = null;
+			try
+			{
+				
+				db = getDB();
+			
+				@SuppressWarnings("unchecked")
+				HashMap<String, Object> obj = db.find(HashMap.class,"crontab");
+				return obj.get("crontab").toString();
+			}
+			catch (Exception exception) {
+	            System.out.println(exception.getMessage());
+	        }
+			
+			return "0 0/5 * * * ?";
+	    }
+	    
+		private Database getDB()
+		{
+			return com.ibm.iotf.cloudant.CloudantClientMgr.getDB();
+		}
+	    
+	    
+	    public String readBluemixEV()
+	    {
+			// VCAP_SERVICES is a system environment variable
+			// Parse it to obtain the  NoSQL DB connection info
+			String crontab = System.getenv("crontab");
+			String serviceName = null;
+
+	    	if (crontab != null) {
+
+				// parse the VCAP JSON structure
+				JsonObject obj =  (JsonObject) new JsonParser().parse(crontab);
+				Entry<String, JsonElement> dbEntry = null;
+				Set<Entry<String, JsonElement>> entries = obj.entrySet();
+				// Look for the VCAP key that holds the cloudant no sql db information
+				for (Entry<String, JsonElement> eachEntry : entries) {				
+					if (eachEntry.getKey().equals("crontab")) {
+						dbEntry = eachEntry;
+						break;
+					}
+				}
+				if (dbEntry == null) {			
+					throw new RuntimeException("Could not find env variable");    					
+				}
+
+				obj =(JsonObject) ((JsonArray)dbEntry.getValue()).get(0);		
+				serviceName = (String)dbEntry.getKey();
+
+
+				obj = (JsonObject) obj.get("crontab");
+
+				return obj.get("username").getAsString();
+	    }
+	    	return "0 0/5 * * * ?";
 	    }
 	}

@@ -36,7 +36,7 @@ public class VodafoneMAT {
 	// TODO Auto-generated method stub
 
 	
-	String org="2m3wff";
+	String org="uy6cof";
 	String type="VodafoneMATAsset";
 	String deviceid = null;
 //	String id[]={"Device01","Device02", "Device03","Device04","Device05"};
@@ -89,7 +89,7 @@ public static void Devicetype(String devicetype, String org){
 	httpPost.addHeader("Accept", "application/json");
 	
 	
-		byte[] encoding = Base64.encodeBase64(new String("a-2m3wff-o25r68u1jo" + ":" + "jBMTgHWJZoNB5Yt7hL").getBytes() );			
+		byte[] encoding = Base64.encodeBase64(new String("a-uy6cof-7cn0vgvrwk" + ":" + "fZfAcg46PjOTS4Kvn8").getBytes() );			
 		String encodedString = new String(encoding);
 		httpPost.addHeader("Authorization", "Basic " + encodedString);
 	
@@ -160,7 +160,7 @@ public static void RegisterDevices(String devicetype, String org){
 	httpPost.addHeader("Accept", "application/json");
 	
 	
-		byte[] encoding = Base64.encodeBase64(new String("a-2m3wff-o25r68u1jo" + ":" + "jBMTgHWJZoNB5Yt7hL").getBytes() );			
+		byte[] encoding = Base64.encodeBase64(new String("a-uy6cof-7cn0vgvrwk" + ":" + "fZfAcg46PjOTS4Kvn8").getBytes() );			
 		String encodedString = new String(encoding);
 		httpPost.addHeader("Authorization", "Basic " + encodedString);
 	
