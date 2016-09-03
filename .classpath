@@ -6,7 +6,6 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="lib/cloudant-client-1.0.1.jar"/>
 	<classpathentry kind="lib" path="lib/com.ibm.json4j_1.0.1.jar"/>
 	<classpathentry kind="lib" path="lib/commons-codec-1.9.jar"/>
 	<classpathentry kind="lib" path="lib/commons-lang3-3.3.2.jar"/>
@@ -40,5 +39,8 @@
 	<classpathentry kind="lib" path="lib/quartz-jobs-2.2.3.jar"/>
 	<classpathentry kind="lib" path="lib/slf4j-api-1.7.7.jar"/>
 	<classpathentry kind="lib" path="lib/slf4j-log4j12-1.7.7.jar"/>
+	<classpathentry kind="lib" path="lib/cloudant-client-2.4.1.jar"/>
+	<classpathentry kind="lib" path="lib/cloudant-http-2.4.1.jar"/>
+	<classpathentry kind="lib" path="lib/commons-io-2.5.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

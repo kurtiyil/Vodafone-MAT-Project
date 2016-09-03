@@ -1,8 +1,10 @@
 package com.ibm.iotf.cloudant;
 
 import java.util.Set;
+import java.util.List;
 import java.util.Map.Entry;
 
+import com.cloudant.client.api.ClientBuilder;
 import com.cloudant.client.api.CloudantClient;
 import com.cloudant.client.api.Database;
 import com.google.gson.JsonArray;
@@ -67,17 +69,26 @@ public class CloudantClientMgr {
 			user = obj.get("username").getAsString();
 			password = obj.get("password").getAsString();
 			host = obj.get("host").getAsString();
+			
+			CloudantClient client = ClientBuilder.account(user)
+                    .username(user)
+                    .password(password)
+                    .disableSSLAuthentication()
+                    .build();
+			System.out.println("Server Version: " + client.serverVersion());
+
+			// Get a List of all the databases this Cloudant account
+			List<String> databases = client.getAllDbs();
+			System.out.println("All my databases : ");
+			for ( String db : databases ) {
+			    System.out.println(db);
+			}
+			
+			return client;
 
 		}
 		else {
 			throw new RuntimeException("VCAP_SERVICES not found");
-		}
-
-		try {
-			return new CloudantClient(user, user, password);
-		}
-		catch(org.lightcouch.CouchDbException e) {
-			throw new RuntimeException("Unable to connect to repository", e);
 		}
 	}
 
@@ -124,7 +135,47 @@ public class CloudantClientMgr {
 	
 	private CloudantClientMgr() {
 	
-	}    	
-	 
+	}   
+	
+    public static String readConfigfromCloudant(String searchString) {
+		Database db = null;
+		try
+		{
+			
+			db = getDB();
+			
+			List<Config> config = db.findByIndex("\"selector\": { \"config\": \"" + searchString + "\" }", Config.class);
+	        for (Config conf : config) {
+	        	return conf.getValue();
+	        }
+		}
+		catch (Exception exception) {
+            System.out.println(exception.getMessage());
+        }
+		
+		return null;
+    }
+    
+	private class Config {
+		  private String _id; 
+		  private String _rev;
+		  private String config;
+		  private String value;
+		  
+		  private String getConfig() {
+			return config;
+		}
+		  private void setConfig(String config) {
+			this.config = config;
+		}
+		  private String getValue() {
+			return value;
+		}
+		  private void setValue(String value) {
+			this.value = value;
+		}
+		  
+		}
+
 	
 }
