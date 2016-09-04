@@ -137,16 +137,17 @@ public class CloudantClientMgr {
 	
 	}   
 	
-    public static String readConfigfromCloudant(String searchString) {
-		Database db = null;
+    public static Config getConfig(String configName){
+		
+    	Database db = null;
 		try
 		{
 			
 			db = getDB();
 			
-			List<Config> config = db.findByIndex("\"selector\": { \"config\": \"" + searchString + "\" }", Config.class);
+			List<Config> config = db.findByIndex("\"selector\": { \"config\": \"" + configName + "\" }", Config.class);
 	        for (Config conf : config) {
-	        	return conf.getValue();
+	        	return conf;
 	        }
 		}
 		catch (Exception exception) {
@@ -154,6 +155,31 @@ public class CloudantClientMgr {
         }
 		
 		return null;
+    	
+    }
+	public static String readConfigfromCloudant(String configName) {
+		
+		return getConfig(configName).getValue();
+	}
+    
+    public static void updateConfig(String configName, String newValue)
+    {
+
+    	Config cf = getConfig(configName);
+    	cf.setValue(newValue);
+    	
+    	Database db = null;
+		try
+		{
+			
+			db = getDB();
+			db.update(cf);
+			
+		}
+		catch (Exception exception) {
+            System.out.println(exception.getMessage());
+        }
+    	
     }
     
 	private class Config {

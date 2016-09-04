@@ -5,6 +5,10 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 
 import javax.net.ssl.SSLContext;
@@ -25,12 +29,13 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import com.ibm.iotf.util.LoggerUtility;
 import com.google.gson.JsonObject;
 import com.ibm.iotf.client.device.DeviceClient;
+import com.ibm.iotf.cloudant.CloudantClientMgr;
 import com.ibm.iotf.sample.client.device.RegisteredDeviceEventPublish;
 
 public class VodafoneMAT {
 	final static int NoOfDevices = 2;
 	
-	public void doJob() throws InterruptedException {
+	public void doJob() throws InterruptedException, ParseException {
 	
 	
 	// TODO Auto-generated method stub
@@ -44,6 +49,22 @@ public class VodafoneMAT {
 	String authtoken = null;
 //	String password[]={"qwerty123","QES5NJ2TO8hpFmpaOA","CcXFDmf!qYEOk1Aaqi","i5J1JsjPhu13AzKh2&","UM+OKeBi-wGHtgS2Zy"};
 
+	String customerName = CloudantClientMgr.readConfigfromCloudant("customer");
+	System.out.println(customerName);
+	ConnecttoMATPortal(customerName);
+	List <String> deviceList = GetDeviveList();
+	CheckDeviceList(deviceList);
+	Date dNow = new Date();
+	SimpleDateFormat ft = new SimpleDateFormat ("yyyy.MM.dd HH:mm:ss.S");
+	dNow = ft.parse(dNow.toString());
+
+		      System.out.println("Current Date: " + dNow.toString());
+	Boolean isSuccesfull = ReadDeviceStatus(deviceList,CloudantClientMgr.readConfigfromCloudant("lastrun"), dNow);
+	
+	if (isSuccesfull){
+		CloudantClientMgr.updateConfig("lastrun",dNow.toString());
+	}
+	
 	//Function called to create device type
 	Devicetype(type, org);
 	
@@ -65,6 +86,27 @@ public class VodafoneMAT {
      new RegisteredDeviceEventPublish(org, type, deviceid, token, authtoken,(new Double(Math.random()*10)).intValue()+1).run();
 	}
 }
+
+private Boolean ReadDeviceStatus(List<String> deviceList, String readConfigfromCloudant, Date dNow) {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+private void CheckDeviceList(List<String> deviceList) {
+		// TODO Auto-generated method stub
+		
+	}
+
+private List<String> GetDeviveList() {
+	return null;
+		// TODO Auto-generated method stub
+		
+	}
+
+private void ConnecttoMATPortal(String readConfigfromCloudant) {
+		// TODO Auto-generated method stub
+		
+	}
 
 public static void Devicetype(String devicetype, String org){
 	
