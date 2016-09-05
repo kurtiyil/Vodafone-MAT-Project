@@ -1,4 +1,4 @@
-<form method="get" action="displayEvents.jsp">
+<form method="post" action="changeScheduler">
 		<table class="TFtable" align="center">
 			<tr>
 				<th align="right" > Property</th>

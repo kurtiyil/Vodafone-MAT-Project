@@ -31,38 +31,58 @@ import com.google.gson.JsonObject;
 import com.ibm.iotf.client.device.DeviceClient;
 import com.ibm.iotf.cloudant.CloudantClientMgr;
 import com.ibm.iotf.sample.client.device.RegisteredDeviceEventPublish;
+import com.ibm.iotf.rest.client.*;
 
 public class VodafoneMAT {
+	
 	final static int NoOfDevices = 2;
+	static String url = null;
+	static String vodafoneURL = "http://localhost:8080/UserService.svc/Rest";
+	static String org = null;
+	static String type = null;
+	static String username = null;
+	static String password = null;
+	static String apikey = null;
+	static String apitoken = null;
+	static String customerName = null;
+	
+	private void initialize()
+	{
+		org = CloudantClientMgr.readConfigfromCloudant("org");
+		type="VodafoneMATAsset";
+		customerName = CloudantClientMgr.readConfigfromCloudant("customer");
+		username = CloudantClientMgr.readConfigfromCloudant("username");
+		password = CloudantClientMgr.readConfigfromCloudant("password");
+		
+	}
 	
 	public void doJob() throws InterruptedException, ParseException {
 	
 	
 	// TODO Auto-generated method stub
 
-	
-	String org="uy6cof";
-	String type="VodafoneMATAsset";
-	String deviceid = null;
+	//String deviceid = null;
 //	String id[]={"Device01","Device02", "Device03","Device04","Device05"};
-	String token="token";
-	String authtoken = null;
+	//String token="token";
+	//String authtoken = null;
 //	String password[]={"qwerty123","QES5NJ2TO8hpFmpaOA","CcXFDmf!qYEOk1Aaqi","i5J1JsjPhu13AzKh2&","UM+OKeBi-wGHtgS2Zy"};
-
-	String customerName = CloudantClientMgr.readConfigfromCloudant("customer");
-	System.out.println(customerName);
-	ConnecttoMATPortal(customerName);
+	
+		initialize();
+	
+	//System.out.println(customerName);
+	ConnecttoMATPortal();
 	List <String> deviceList = GetDeviveList();
 	CheckDeviceList(deviceList);
 	Date dNow = new Date();
 	SimpleDateFormat ft = new SimpleDateFormat ("yyyy.MM.dd HH:mm:ss.S");
-	dNow = ft.parse(dNow.toString());
 
-		      System.out.println("Current Date: " + dNow.toString());
-	Boolean isSuccesfull = ReadDeviceStatus(deviceList,CloudantClientMgr.readConfigfromCloudant("lastrun"), dNow);
+
+	System.out.println("Current Date: " + ft.format(dNow));
+	Boolean isSuccesfull = ReadDeviceStatus(deviceList,CloudantClientMgr.readConfigfromCloudant("lastrun"), ft.format(dNow));
 	
 	if (isSuccesfull){
-		CloudantClientMgr.updateConfig("lastrun",dNow.toString());
+		CloudantClientMgr.updateConfig("lastrun",ft.format(dNow));
+		return;
 	}
 	
 	//Function called to create device type
@@ -71,7 +91,7 @@ public class VodafoneMAT {
 	//Function called to register devices in Watson IoT Platform Service
 	RegisterDevices(type, org);
 	
-	for(int i=1; i<=NoOfDevices; i++)
+/*	for(int i=1; i<=NoOfDevices; i++)
 	{
 		if(i<10){	
 			
@@ -81,13 +101,13 @@ public class VodafoneMAT {
 		else{
 			deviceid = "Device" + i;
 			authtoken = "qwerty" + i;
-		}
+		}*/
 	//	RegisteredDeviceEventPublish.simulateDevice(org, type, deviceID, token, password);
-     new RegisteredDeviceEventPublish(org, type, deviceid, token, authtoken,(new Double(Math.random()*10)).intValue()+1).run();
-	}
+    // new RegisteredDeviceEventPublish(org, type, deviceid, token, authtoken,(new Double(Math.random()*10)).intValue()+1).run();
+	//}
 }
 
-private Boolean ReadDeviceStatus(List<String> deviceList, String readConfigfromCloudant, Date dNow) {
+private Boolean ReadDeviceStatus(List<String> deviceList, String readConfigfromCloudant, String string) {
 		// TODO Auto-generated method stub
 		return true;
 	}
@@ -103,16 +123,16 @@ private List<String> GetDeviveList() {
 		
 	}
 
-private void ConnecttoMATPortal(String readConfigfromCloudant) {
+private void ConnecttoMATPortal() {
 		// TODO Auto-generated method stub
-		
+	apitoken = VodafoneAssetClient.userAuthenticate(vodafoneURL, username, password,customerName);
 	}
 
 public static void Devicetype(String devicetype, String org){
 	
 	String devicetypebody = null;
 	
-	String url = null;
+	
 	
 	devicetypebody = DevicetypeBody(devicetype);
 	
@@ -184,8 +204,6 @@ public static void RegisterDevices(String devicetype, String org){
 		deviceid = "Device" + i;
 		authtoken = "qwerty" + i;
 	}
-	
-	url = "https://" + org + ".internetofthings.ibmcloud.com/api/v0002/bulk/devices/add";
 	
 	devicebody = DeviceBody(deviceid, devicetype, authtoken);
 	
