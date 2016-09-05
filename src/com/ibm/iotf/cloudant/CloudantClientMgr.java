@@ -157,6 +157,7 @@ public class CloudantClientMgr {
 		return null;
     	
     }
+    
 	public static String readConfigfromCloudant(String configName) {
 		
 		return getConfig(configName).getValue();
@@ -182,6 +183,72 @@ public class CloudantClientMgr {
     	
     }
     
+    public static Device getDevice(String deviceName){
+		
+    	Database db = null;
+		try
+		{
+			
+			db = getDB();
+			
+			List<Device> device = db.findByIndex("\"selector\": { \"config\": \"" + deviceName + "\" }", Device.class);
+	        for (Device dev : device) {
+	        	return dev;
+	        }
+		}
+		catch (Exception exception) {
+            System.out.println(exception.getMessage());
+        }
+		
+		return null;
+    	
+    }
+    
+	public static String readDevicefromCloudant(String deviceName) {
+		
+		return getDevice(deviceName).getName();
+	}
+    
+    public static void updateDevice(String deviceName, String newValue)
+    {
+
+    	Device dv = getDevice(deviceName);
+    	dv.setName(newValue);
+    	
+    	Database db = null;
+		try
+		{
+			
+			db = getDB();
+			db.update(dv);
+			
+		}
+		catch (Exception exception) {
+            System.out.println(exception.getMessage());
+        }
+    	
+    }
+    
+    public static void createDevice(String deviceName, String assetId)
+    {
+
+    	Device dv = null;
+    	dv.setAssetId(assetId);
+    	dv.setName(deviceName);
+    	
+    	Database db = null;
+		try
+		{
+			
+			db = getDB();
+			db.save(dv);			
+		}
+		catch (Exception exception) {
+            System.out.println(exception.getMessage());
+        }
+    	
+    }
+    
 	private class Config {
 		  private String _id; 
 		  private String _rev;
@@ -199,6 +266,27 @@ public class CloudantClientMgr {
 		}
 		  private void setValue(String value) {
 			this.value = value;
+		}
+		  
+		}
+	
+	private class Device {
+		  private String _id; 
+		  private String _rev;
+		  private String assetId;
+		  private String name;
+		  
+		public String getAssetId() {
+			return assetId;
+		}
+		public void setAssetId(String assetId) {
+			this.assetId = assetId;
+		}
+		public String getName() {
+			return name;
+		}
+		public void setName(String name) {
+			this.name = name;
 		}
 		  
 		}

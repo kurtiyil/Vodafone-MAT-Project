@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Properties;
 
 import javax.net.ssl.SSLContext;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.net.util.Base64;
 import org.apache.http.Header;
@@ -30,6 +31,7 @@ import com.ibm.iotf.util.LoggerUtility;
 import com.google.gson.JsonObject;
 import com.ibm.iotf.client.device.DeviceClient;
 import com.ibm.iotf.cloudant.CloudantClientMgr;
+import com.ibm.iotf.model.Asset;
 import com.ibm.iotf.sample.client.device.RegisteredDeviceEventPublish;
 import com.ibm.iotf.rest.client.*;
 
@@ -45,6 +47,7 @@ public class VodafoneMAT {
 	static String apikey = null;
 	static String apitoken = null;
 	static String customerName = null;
+	static List<Asset> deviceList = null;
 	
 	private void initialize()
 	{
@@ -71,14 +74,14 @@ public class VodafoneMAT {
 	
 	//System.out.println(customerName);
 	ConnecttoMATPortal();
-	List <String> deviceList = GetDeviveList();
-	CheckDeviceList(deviceList);
+	GetDeviveList();
+	CheckDeviceList();
 	Date dNow = new Date();
 	SimpleDateFormat ft = new SimpleDateFormat ("yyyy.MM.dd HH:mm:ss.S");
 
 
 	System.out.println("Current Date: " + ft.format(dNow));
-	Boolean isSuccesfull = ReadDeviceStatus(deviceList,CloudantClientMgr.readConfigfromCloudant("lastrun"), ft.format(dNow));
+	Boolean isSuccesfull = ReadDeviceStatus(CloudantClientMgr.readConfigfromCloudant("lastrun"), ft.format(dNow));
 	
 	if (isSuccesfull){
 		CloudantClientMgr.updateConfig("lastrun",ft.format(dNow));
@@ -107,25 +110,40 @@ public class VodafoneMAT {
 	//}
 }
 
-private Boolean ReadDeviceStatus(List<String> deviceList, String readConfigfromCloudant, String string) {
-		// TODO Auto-generated method stub
+	private Boolean ReadDeviceStatus(String lastRunDate, String dNow) {
+		
+
 		return true;
 	}
 
-private void CheckDeviceList(List<String> deviceList) {
-		// TODO Auto-generated method stub
+	private void CheckDeviceList() {
+
+		for(Asset device : deviceList) {
+			if (CloudantClientMgr.readDevicefromCloudant(device.getName()).equals(null)) {
+				CloudantClientMgr.createDevice(device.getName(), device.getAssetId());
+			}
+		}	
+
 		
 	}
 
-private List<String> GetDeviveList() {
-	return null;
-		// TODO Auto-generated method stub
-		
+	private void GetDeviveList() {
+		try {
+			deviceList=VodafoneAssetClient.assetListPerUser(vodafoneURL, username, apitoken);
+		} catch (ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
-private void ConnecttoMATPortal() {
+	private void ConnecttoMATPortal() {
 		// TODO Auto-generated method stub
-	apitoken = VodafoneAssetClient.userAuthenticate(vodafoneURL, username, password,customerName);
+		try {
+			apitoken = VodafoneAssetClient.userAuthenticate(vodafoneURL, username, password,customerName);
+		} catch (ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 public static void Devicetype(String devicetype, String org){

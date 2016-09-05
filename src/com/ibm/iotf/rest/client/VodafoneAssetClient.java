@@ -2,11 +2,16 @@ package com.ibm.iotf.rest.client;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 
 import javax.net.ssl.SSLContext;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.net.util.Base64;
 import org.apache.http.HttpEntity;
@@ -18,11 +23,20 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import com.ibm.iotf.model.Asset;
+
 
 public class VodafoneAssetClient {
-public static String userAuthenticate (String URL, String username, String password, String company){
 	
 	
+public static String userAuthenticate (String URL, String username, String password, String company) throws ParserConfigurationException{
+
 	HttpPost httpPost = new HttpPost(URL+"/UserAuthenticate");
 	StringEntity requestEntity = new StringEntity(
 			authenticationBody(username,password,company),
@@ -34,58 +48,40 @@ public static String userAuthenticate (String URL, String username, String passw
 	httpPost.setEntity(requestEntity);
 	httpPost.addHeader("Content-Type", "application/json");
 	//httpPost.addHeader("Accept", "application/json");
-	
-	
-		//byte[] encoding = Base64.encodeBase64(new String("a-uy6cof-7cn0vgvrwk" + ":" + "fZfAcg46PjOTS4Kvn8").getBytes() );			
-		//String encodedString = new String(encoding);
-		//httpPost.addHeader("Authorization", "Basic " + encodedString);
-	
-	
+		
 	try {
 		
-		//SSLContext sslContext = null;
-		//try {
-		//	sslContext = SSLContext.getInstance("TLSv1.2");
-		//} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-		//	e.printStackTrace();
-		//}
-		//try {
-		//	sslContext.init(null, null, null);
-		//} catch (KeyManagementException e) {
-			// TODO Auto-generated catch block
-		//	e.printStackTrace();
-		//}
-
 		HttpClient client = HttpClientBuilder.create().build();
 		
 		HttpResponse response = client.execute(httpPost);
 
 		int httpCode = response.getStatusLine().getStatusCode();
+		if (httpCode ==200){
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(response.getEntity().getContent());
+			doc.getDocumentElement().normalize();
 
-
-		BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-
-		StringBuffer result = new StringBuffer();
-		String line = "";
-		while ((line = rd.readLine()) != null) {
-			result.append(line);
+			return doc.getElementsByTagName("Token").item(0).getTextContent();
+			
 		}
-		
-		System.out.println(result.toString());
-		System.out.println(httpCode);
-		return "abc";
 		}catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			}
+			} catch (IllegalStateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SAXException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	return null;
 	
 }
 
-public static String assetListPerUser (String URL, String username, String token){
-	
-	
+
+public static List<Asset> assetListPerUser (String URL, String username, String token) throws ParserConfigurationException{
+
 	HttpPost httpPost = new HttpPost(URL+"/AssetlistPerUser");
 	StringEntity requestEntity = new StringEntity(
 			assetListBody(username,token),
@@ -97,51 +93,51 @@ public static String assetListPerUser (String URL, String username, String token
 	httpPost.setEntity(requestEntity);
 	httpPost.addHeader("Content-Type", "application/json");
 	//httpPost.addHeader("Accept", "application/json");
-	
-	
-		//byte[] encoding = Base64.encodeBase64(new String("a-uy6cof-7cn0vgvrwk" + ":" + "fZfAcg46PjOTS4Kvn8").getBytes() );			
-		//String encodedString = new String(encoding);
-		//httpPost.addHeader("Authorization", "Basic " + encodedString);
-	
-	
+		
 	try {
 		
-		//SSLContext sslContext = null;
-		//try {
-		//	sslContext = SSLContext.getInstance("TLSv1.2");
-		//} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-		//	e.printStackTrace();
-		//}
-		//try {
-		//	sslContext.init(null, null, null);
-		//} catch (KeyManagementException e) {
-			// TODO Auto-generated catch block
-		//	e.printStackTrace();
-		//}
-
 		HttpClient client = HttpClientBuilder.create().build();
 		
 		HttpResponse response = client.execute(httpPost);
 
 		int httpCode = response.getStatusLine().getStatusCode();
+		if (httpCode ==200){
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(response.getEntity().getContent());
+			doc.getDocumentElement().normalize();
+			NodeList nList = doc.getElementsByTagName("e");
+			//System.out.println("----------------------------");
+			List <Asset> aLPU = null;
+			
+			for (int temp = 0; temp < nList.getLength(); temp++) {
 
+				Node nNode = nList.item(temp);
 
-		BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+				//System.out.println("\nCurrent Element :" + nNode.getNodeName());
 
-		StringBuffer result = new StringBuffer();
-		String line = "";
-		while ((line = rd.readLine()) != null) {
-			result.append(line);
+				if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+
+					Element eElement = (Element) nNode;
+					Asset a = null;
+					a.setAssetId(eElement.getElementsByTagName("AssetId").item(0).getTextContent());
+					a.setName(eElement.getElementsByTagName("Name").item(0).getTextContent());
+					aLPU.add(a);
+				}
+			}
+			return aLPU;
+			
 		}
-		
-		System.out.println(result.toString());
-		System.out.println(httpCode);
-		return "abc";
 		}catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			}
+			} catch (IllegalStateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SAXException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	return null;
 	
 }
@@ -164,4 +160,49 @@ public static String assetListBody (String username, String token){
 	return body;
 }
 
+public static String XMLPArser (InputStream is, String searchText){
+try {
+
+	DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+	DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+	Document doc = dBuilder.parse(is);
+
+	//optional, but recommended
+	//read this - http://stackoverflow.com/questions/13786607/normalization-in-dom-parsing-with-java-how-does-it-work
+	doc.getDocumentElement().normalize();
+
+	System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
+
+	return doc.getElementsByTagName(searchText).item(0).getTextContent();
+
+/*	System.out.println("----------------------------");
+
+	for (int temp = 0; temp < nList.getLength(); temp++) {
+
+		Node nNode = nList.item(temp);
+
+		System.out.println("\nCurrent Element :" + nNode.getNodeName());
+
+		if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+
+			Element eElement = (Element) nNode;
+
+			if (eElement.getTagName().equals(searchText))
+			{
+				return eElement.;
+			}
+			System.out.println("Staff id : " + eElement.getAttribute("id"));
+			System.out.println("First Name : " + eElement.getElementsByTagName("firstname").item(0).getTextContent());
+			System.out.println("Last Name : " + eElement.getElementsByTagName("lastname").item(0).getTextContent());
+			System.out.println("Nick Name : " + eElement.getElementsByTagName("nickname").item(0).getTextContent());
+			System.out.println("Salary : " + eElement.getElementsByTagName("salary").item(0).getTextContent());
+
+		}
+	}*/
+    } catch (Exception e) {
+	e.printStackTrace();
+    }
+return searchText;
+
+}
 }
