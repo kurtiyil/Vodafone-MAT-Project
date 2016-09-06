@@ -34,6 +34,7 @@ import com.google.gson.JsonObject;
 import com.ibm.iotf.client.device.DeviceClient;
 import com.ibm.iotf.cloudant.CloudantClientMgr;
 import com.ibm.iotf.model.Asset;
+import com.ibm.iotf.model.AssetData;
 import com.ibm.iotf.sample.client.device.RegisteredDeviceEventPublish;
 import com.ibm.iotf.rest.client.*;
 
@@ -120,7 +121,7 @@ public class VodafoneMAT {
 	private Boolean ReadDeviceStatus(String lastRunDate, String dNow) {
 		for(Asset device : deviceList) {
 			try {
-				JSONObject jsonobj = VodafoneAssetClient.assetDataPerDate (vodafoneURL, device.getName(), lastRunDate, dNow, username, token);
+				List<AssetData> assetData  = VodafoneAssetClient.assetDataPerDate (vodafoneURL, device.getName(), lastRunDate, dNow, username, token);
 			} catch (ParserConfigurationException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -143,7 +144,7 @@ public class VodafoneMAT {
 
 	private void GetDeviveList() {
 		try {
-			deviceList=VodafoneAssetClient.assetListPerUser(vodafoneURL, username, apitoken);
+			deviceList=VodafoneAssetClient.assetListPerUser(vodafoneURL, username, token);
 		} catch (ParserConfigurationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -297,7 +298,7 @@ public static String DeviceBody(String deviceid, String devicetype, String autht
 
 	String body = null;
 	
-	body = "[ { \"typeId\": \"" +devicetype + "\", \"deviceId\": \"" + deviceid + "\",\"deviceInfo\": { \"serialNumber\": \"string\", \"manufacturer\": \"string\", \"model\": \"string\", \"deviceClass\": \"string\",  \"description\": \"string\", \"fwVersion\": \"string\",\"hwVersion\": \"string\",\"descriptiveLocation\": \"string\"}, \"location\": {\"longitude\": 0, \"latitude\": 0,\"elevation\": 0, \"accuracy\": 0, \"measuredDateTime\": \"2016-05-06T10:23:57.999Z\"  }, \"metadata\": {}, \"authToken\": \"" + authtoken + "\"} ]";
+	body = "[ { \"typeId\": \"" + devicetype + "\", \"deviceId\": \"" + deviceid + "\",\"deviceInfo\": { \"serialNumber\": \"string\", \"manufacturer\": \"string\", \"model\": \"string\", \"deviceClass\": \"string\",  \"description\": \"string\", \"fwVersion\": \"string\",\"hwVersion\": \"string\",\"descriptiveLocation\": \"string\"}, \"location\": {\"longitude\": 0, \"latitude\": 0,\"elevation\": 0, \"accuracy\": 0, \"measuredDateTime\": \"2016-05-06T10:23:57.999Z\"  }, \"metadata\": {}, \"authToken\": \"" + authtoken + "\"} ]";
 	
 	return body;
 }

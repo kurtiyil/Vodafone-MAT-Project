@@ -17,5 +17,7 @@ public class Asset {
 	public void setName(String name) {
 		Name = name;
 	}
+	
+
 
 }

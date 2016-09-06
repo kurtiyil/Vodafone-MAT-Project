@@ -1,6 +1,8 @@
 package com.ibm.iotf.rest.client;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -10,9 +12,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.net.ssl.SSLContext;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.net.util.Base64;
 import org.apache.http.HttpEntity;
@@ -30,7 +36,12 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import com.google.gson.Gson;
 import com.ibm.iotf.model.Asset;
+import com.ibm.iotf.model.AssetData;
+import com.ibm.iotf.model.AssetDataPerDate;
+import com.ibm.iotf.model.AssetlistPerUser;
+import com.ibm.iotf.model.AuthenticationResponse;
 import com.ibm.json.java.JSONObject;
 
 
@@ -59,12 +70,16 @@ public static String userAuthenticate (String URL, String username, String passw
 
 		int httpCode = response.getStatusLine().getStatusCode();
 		if (httpCode ==200){
-			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			Gson gson = new Gson();
+			AuthenticationResponse auresp = gson.fromJson(stream2String(response.getEntity().getContent()), AuthenticationResponse.class);
+			return auresp.getToken();
+			
+/*			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			Document doc = dBuilder.parse(response.getEntity().getContent());
 			doc.getDocumentElement().normalize();
 
-			return doc.getElementsByTagName("Token").item(0).getTextContent();
+			return doc.getElementsByTagName("Token").item(0).getTextContent();*/
 			
 		}
 		}catch (IOException e) {
@@ -73,15 +88,37 @@ public static String userAuthenticate (String URL, String username, String passw
 			} catch (IllegalStateException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (SAXException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 	return null;
 	
 }
 
+	public static String stream2String (InputStream is) {
+		
+		BufferedInputStream bis = new BufferedInputStream(is);
+		ByteArrayOutputStream buf = new ByteArrayOutputStream();
+		int result;
+		try {
+			result = bis.read();
+			while(result != -1) {
+			    buf.write((byte) result);
+			    result = bis.read();
+			}
 
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		finally{
+			try {
+				if(bis!=null) bis.close();
+				if (buf!=null) buf.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+		}}
+		return buf.toString();
+	}
 	public static List<Asset> assetListPerUser (String URL, String username, String token) throws ParserConfigurationException{
 
 		HttpPost httpPost = new HttpPost(URL+"/AssetlistPerUser");
@@ -104,7 +141,20 @@ public static String userAuthenticate (String URL, String username, String passw
 
 			int httpCode = response.getStatusLine().getStatusCode();
 			if (httpCode ==200){
-				DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+				List <Asset> aLPU = new ArrayList <Asset>();
+				
+				Gson gson = new Gson();
+				AssetlistPerUser alpu = gson.fromJson(stream2String(response.getEntity().getContent()), AssetlistPerUser.class);
+				ArrayList <Asset> al = alpu.getData();
+				
+				for (Asset as : alpu.getData())
+				{
+					aLPU.add(as);
+				}
+				
+				return aLPU;
+				
+/*				DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 				DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 				Document doc = dBuilder.parse(response.getEntity().getContent());
 				doc.getDocumentElement().normalize();
@@ -113,7 +163,7 @@ public static String userAuthenticate (String URL, String username, String passw
 				
 				NodeList nList = doc.getElementsByTagName("e");
 				//System.out.println("----------------------------");
-				List <Asset> aLPU = new ArrayList <Asset>();
+				
 			
 				for (int temp = 0; temp < nList.getLength(); temp++) {
 
@@ -131,7 +181,7 @@ public static String userAuthenticate (String URL, String username, String passw
 						aLPU.add(a);
 					}
 				}
-				return aLPU;
+				return aLPU;*/
 			
 			}
 			}catch (IOException e) {
@@ -140,20 +190,15 @@ public static String userAuthenticate (String URL, String username, String passw
 			} catch (IllegalStateException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (SAXException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
 		return null;
 	
 	}
 
-	public static JSONObject assetDataPerDate (String URL, String assetName, String dateFrom, String dateTo, String username, String token) throws ParserConfigurationException{
+	public static List<AssetData> assetDataPerDate (String URL, String assetName, String dateFrom, String dateTo, String username, String token) throws ParserConfigurationException{
 
 		HttpPost httpPost = new HttpPost(URL+"/AssetDataPerDate");
-		StringEntity requestEntity = new StringEntity(
-				assetDataPerDateBody(assetName, dateFrom, dateTo, username,token),
-		    ContentType.APPLICATION_JSON);
+		StringEntity requestEntity = new StringEntity(assetDataPerDateBody(assetName, dateFrom, dateTo, username,token),ContentType.APPLICATION_JSON);
 		/*
 		 * Execute the HTTP Request
 		 */
@@ -170,8 +215,18 @@ public static String userAuthenticate (String URL, String username, String passw
 
 			int httpCode = response.getStatusLine().getStatusCode();
 			if (httpCode ==200){
-				JSONObject jsonobj = new JSONObject();
-				return JSONObject.parse(response.getEntity().getContent());
+				List <AssetData> aLPU = new ArrayList <AssetData>();
+				
+				Gson gson = new Gson();
+				AssetDataPerDate alpu = gson.fromJson(stream2String(response.getEntity().getContent()), AssetDataPerDate.class);
+				ArrayList <AssetData> al = alpu.getData();
+				
+				for (AssetData as : alpu.getData())
+				{
+					aLPU.add(as);
+				}
+				
+				return aLPU;
 					
 			}
 			}catch (IOException e) {
