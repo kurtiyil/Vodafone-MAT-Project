@@ -11,6 +11,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.ibm.iotf.model.Config;
+import com.ibm.iotf.model.Device;
 
 public class CloudantClientMgr {
 
@@ -191,7 +193,7 @@ public class CloudantClientMgr {
 			
 			db = getDB();
 			
-			List<Device> device = db.findByIndex("\"selector\": { \"config\": \"" + deviceName + "\" }", Device.class);
+			List<Device> device = db.findByIndex("\"selector\": { \"name\": \"" + deviceName + "\" }", Device.class);
 	        for (Device dev : device) {
 	        	return dev;
 	        }
@@ -206,7 +208,10 @@ public class CloudantClientMgr {
     
 	public static String readDevicefromCloudant(String deviceName) {
 		
-		return getDevice(deviceName).getName();
+		if (getDevice(deviceName) == null)
+				return null;
+		else			
+			return getDevice(deviceName).getAssetId();
 	}
     
     public static void updateDevice(String deviceName, String newValue)
@@ -232,7 +237,7 @@ public class CloudantClientMgr {
     public static void createDevice(String deviceName, String assetId)
     {
 
-    	Device dv = null;
+    	Device dv = new Device();
     	dv.setAssetId(assetId);
     	dv.setName(deviceName);
     	
@@ -248,48 +253,7 @@ public class CloudantClientMgr {
         }
     	
     }
-    
-	private class Config {
-		  private String _id; 
-		  private String _rev;
-		  private String config;
-		  private String value;
-		  
-		  private String getConfig() {
-			return config;
-		}
-		  private void setConfig(String config) {
-			this.config = config;
-		}
-		  private String getValue() {
-			return value;
-		}
-		  private void setValue(String value) {
-			this.value = value;
-		}
-		  
-		}
-	
-	private class Device {
-		  private String _id; 
-		  private String _rev;
-		  private String assetId;
-		  private String name;
-		  
-		public String getAssetId() {
-			return assetId;
-		}
-		public void setAssetId(String assetId) {
-			this.assetId = assetId;
-		}
-		public String getName() {
-			return name;
-		}
-		public void setName(String name) {
-			this.name = name;
-		}
-		  
-		}
+
 
 	
 }
