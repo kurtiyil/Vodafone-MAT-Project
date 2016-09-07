@@ -50,7 +50,7 @@ public class VodafoneAssetClient {
 	
 public static String userAuthenticate (String URL, String username, String password, String company) throws ParserConfigurationException{
 
-	HttpPost httpPost = new HttpPost(URL+"/UserAuthenticate");
+	HttpPost httpPost = new HttpPost(URL);
 	StringEntity requestEntity = new StringEntity(
 			authenticationBody(username,password,company),
 		    ContentType.APPLICATION_JSON);
@@ -255,7 +255,7 @@ public static String userAuthenticate (String URL, String username, String passw
 	
 		String body = null;
 	
-		body = "{\"loginuser\": { \"UserName\": \"" + username + "\", \"Token\": \"" + token + "\"}}";
+		body = "{\"loginUser\": { \"UserName\": \"" + username + "\", \"Token\": \"" + token + "\"}}";
 	
 		return body;
 	}

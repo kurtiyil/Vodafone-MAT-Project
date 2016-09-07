@@ -15,6 +15,7 @@ import java.util.Properties;
 import javax.net.ssl.SSLContext;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.net.util.Base64;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -29,7 +30,10 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import com.ibm.iotf.util.LoggerUtility;
+import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.ibm.iotf.client.device.DeviceClient;
 import com.ibm.iotf.cloudant.CloudantClientMgr;
@@ -41,8 +45,9 @@ import com.ibm.iotf.rest.client.*;
 public class VodafoneMAT {
 	
 	final static int NoOfDevices = 2;
-	static String url = null;
-	static String vodafoneURL = "http://localhost:8080/UserService.svc/Rest";
+	static String vodafoneUserURL = null;
+	static String vodafoneAssetURL = null;
+	//static String vodafoneURL = "http://localhost:8080/UserService.svc/Rest";
 	static String org = null;
 	static String devicetype = null;
 	static String username = null;
@@ -66,6 +71,8 @@ public class VodafoneMAT {
 		apitoken = CloudantClientMgr.readConfigfromCloudant("APIToken");
 		deviceTypeURL = "https://" + org  + ".internetofthings.ibmcloud.com/api/v0002/device/types";
 		deviceAddURL = "https://" + org + ".internetofthings.ibmcloud.com/api/v0002/bulk/devices/add";
+		vodafoneUserURL = "https://matapi.vodafone.com/UserService.svc/Rest/UserAuthenticate";
+		vodafoneAssetURL ="https://matapi.vodafone.com/AssetService.svc/rest";
 		
 	}
 	
@@ -87,10 +94,10 @@ public class VodafoneMAT {
 		GetDeviveList();
 		CheckDeviceList();
 		Date dNow = new Date();
-		SimpleDateFormat ft = new SimpleDateFormat ("yyyy.MM.dd HH:mm:ss.S");
+		SimpleDateFormat ft = new SimpleDateFormat ("dd/MM/yyyy");
 		System.out.println("Current Date: " + ft.format(dNow));
-		Boolean isSuccesfull = ReadDeviceStatus(CloudantClientMgr.readConfigfromCloudant("lastrun"), ft.format(dNow));
-	
+		//Boolean isSuccesfull = ReadDeviceStatus(CloudantClientMgr.readConfigfromCloudant("lastrun"), ft.format(dNow));
+		Boolean isSuccesfull = ReadDeviceStatus("10/01/2014", ft.format(dNow));
 		if (isSuccesfull){
 			CloudantClientMgr.updateConfig("lastrun",ft.format(dNow));
 			return;
@@ -121,7 +128,10 @@ public class VodafoneMAT {
 	private Boolean ReadDeviceStatus(String lastRunDate, String dNow) {
 		for(Asset device : deviceList) {
 			try {
-				List<AssetData> assetData  = VodafoneAssetClient.assetDataPerDate (vodafoneURL, device.getName(), lastRunDate, dNow, username, token);
+				List<AssetData> assetData  = VodafoneAssetClient.assetDataPerDate (vodafoneAssetURL, device.getName(), lastRunDate, dNow, username, token);
+				for (AssetData as : assetData){
+					
+				}
 			} catch (ParserConfigurationException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -132,19 +142,19 @@ public class VodafoneMAT {
 	}
 
 	private void CheckDeviceList() {
-
+		createDevicetype();
 		for(Asset device : deviceList) {
 			
-			if (CloudantClientMgr.readDevicefromCloudant(device.getName()) == null) {
-				CloudantClientMgr.createDevice(device.getName(), device.getAssetId());
-				registerDevices(device.getName());
-			}
+			//if (CloudantClientMgr.readDevicefromCloudant(device.getName()) == null) {
+			//	CloudantClientMgr.createDevice(device.getName(), device.getAssetId());
+				registerDevices(device.getName(), device.getAssetId());
+			//}
 		}	
 	}
 
 	private void GetDeviveList() {
 		try {
-			deviceList=VodafoneAssetClient.assetListPerUser(vodafoneURL, username, token);
+			deviceList=VodafoneAssetClient.assetListPerUser(vodafoneAssetURL, username, token);
 		} catch (ParserConfigurationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -154,7 +164,7 @@ public class VodafoneMAT {
 	private void ConnecttoMATPortal() {
 		// TODO Auto-generated method stub
 		try {
-			token = VodafoneAssetClient.userAuthenticate(vodafoneURL, username, password,customerName);
+			token = VodafoneAssetClient.userAuthenticate(vodafoneUserURL, username, password,customerName);
 		} catch (ParserConfigurationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -218,7 +228,7 @@ public static void createDevicetype(){
 			}
 }
 
-public static void registerDevices(String deviceName){
+public static void registerDevices(String deviceName, String deviceID){
 	
 //	String devicebody = "[ { \"typeId\": \"WaterPump\", \"deviceId\": \"Device01\",\"deviceInfo\": { \"serialNumber\": \"string\", \"manufacturer\": \"string\", \"model\": \"string\", \"deviceClass\": \"string\",  \"description\": \"string\", \"fwVersion\": \"string\",\"hwVersion\": \"string\",\"descriptiveLocation\": \"string\"}, \"location\": {\"longitude\": 0, \"latitude\": 0,\"elevation\": 0, \"accuracy\": 0, \"measuredDateTime\": \"2016-05-06T10:23:57.999Z\"  }, \"metadata\": {}, \"authToken\": \"qwerty01\"} ]";
 	String devicebody = null;
@@ -238,9 +248,9 @@ public static void registerDevices(String deviceName){
 		authtoken = "qwerty" + i;
 	}
 	*/
-	createDevicetype();
 	
-	devicebody = DeviceBody(deviceName, devicetype, "passw0rd");
+	
+	devicebody = DeviceBody(deviceID, devicetype, "passw0rd", deviceName);
 	
 	HttpPost httpPost = new HttpPost(deviceAddURL);
 	StringEntity requestEntity = new StringEntity(
@@ -249,7 +259,7 @@ public static void registerDevices(String deviceName){
 		/*
 		 * Execute the HTTP Request
 		 */
-
+	
 	httpPost.setEntity(requestEntity);
 	httpPost.addHeader("Content-Type", "application/json");
 	httpPost.addHeader("Accept", "application/json");
@@ -294,11 +304,11 @@ public static void registerDevices(String deviceName){
 }
 
 
-public static String DeviceBody(String deviceid, String devicetype, String authtoken){
+public static String DeviceBody(String deviceid, String devicetype, String authtoken, String description){
 
 	String body = null;
 	
-	body = "[ { \"typeId\": \"" + devicetype + "\", \"deviceId\": \"" + deviceid + "\",\"deviceInfo\": { \"serialNumber\": \"string\", \"manufacturer\": \"string\", \"model\": \"string\", \"deviceClass\": \"string\",  \"description\": \"string\", \"fwVersion\": \"string\",\"hwVersion\": \"string\",\"descriptiveLocation\": \"string\"}, \"location\": {\"longitude\": 0, \"latitude\": 0,\"elevation\": 0, \"accuracy\": 0, \"measuredDateTime\": \"2016-05-06T10:23:57.999Z\"  }, \"metadata\": {}, \"authToken\": \"" + authtoken + "\"} ]";
+	body = "[ { \"typeId\": \"" + StringEscapeUtils.escapeJson(devicetype) + "\", \"deviceId\": \"" + StringEscapeUtils.escapeJson(deviceid) + "\",\"deviceInfo\": { \"serialNumber\": \"string\", \"manufacturer\": \"string\", \"model\": \"string\", \"deviceClass\": \"string\",  \"description\": \"" + description +"\", \"fwVersion\": \"string\",\"hwVersion\": \"string\",\"descriptiveLocation\": \"string\"}, \"location\": {\"longitude\": 0, \"latitude\": 0,\"elevation\": 0, \"accuracy\": 0, \"measuredDateTime\": \"2016-05-06T10:23:57.999Z\"  }, \"metadata\": {}, \"authToken\": \"" + StringEscapeUtils.escapeJson(authtoken) + "\"} ]";
 	
 	return body;
 }
@@ -307,7 +317,7 @@ public static String DevicetypeBody (String devicetype){
 	
 	String body = null;
 	
-	body = "{ \"id\": \"" + devicetype + "\", \"description\": \"string\", \"classId\": \"Device\", \"deviceInfo\": { \"serialNumber\": \"string\", \"manufacturer\": \"string\", \"model\": \"string\", \"deviceClass\": \"string\", \"description\": \"string\", \"fwVersion\": \"string\", \"hwVersion\": \"string\",	\"descriptiveLocation\": \"string\" },\"metadata\": {}}";
+	body = "{ \"id\": \"" + StringEscapeUtils.escapeJson(devicetype) + "\", \"description\": \"string\", \"classId\": \"Device\", \"deviceInfo\": { \"serialNumber\": \"string\", \"manufacturer\": \"string\", \"model\": \"string\", \"deviceClass\": \"string\", \"description\": \"string\", \"fwVersion\": \"string\", \"hwVersion\": \"string\",	\"descriptiveLocation\": \"string\" },\"metadata\": {}}";
 
 	return body;
 }
