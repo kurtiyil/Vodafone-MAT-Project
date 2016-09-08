@@ -1,6 +1,7 @@
 package deviceSimulation;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.security.KeyManagementException;
@@ -24,6 +25,7 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -42,6 +44,7 @@ import com.ibm.iotf.model.Asset;
 import com.ibm.iotf.model.AssetData;
 import com.ibm.iotf.model.AssetlistPerUser;
 import com.ibm.iotf.model.Config;
+import com.ibm.iotf.model.Device;
 import com.ibm.iotf.sample.client.device.RegisteredDeviceEventPublish;
 import com.ibm.iotf.rest.client.*;
 
@@ -63,6 +66,8 @@ public class VodafoneMAT {
 	static String customerName = null;
 	static String deviceTypeURL = null;
 	static String deviceAddURL = null;
+	static String deviceGetURL = null;
+	static String defaultLastRunDate = null;
 	static List<Asset> deviceList = new ArrayList <Asset>();
 	
 	private void initialize()
@@ -80,7 +85,9 @@ public class VodafoneMAT {
 		customerName = config.getMat().getCredentials().getCustomer();
 		username = config.getMat().getCredentials().getUserName();
 		password = config.getMat().getCredentials().getPassword();
-
+		defaultLastRunDate = config.getStartDate();
+		
+		
 		
 		/*		org = CloudantClientMgr.readConfigfromCloudant("org");
 		customerName = CloudantClientMgr.readConfigfromCloudant("customer");
@@ -91,6 +98,8 @@ public class VodafoneMAT {
 		
 		deviceTypeURL = "https://" + org  + ".internetofthings.ibmcloud.com/api/v0002/device/types";
 		deviceAddURL = "https://" + org + ".internetofthings.ibmcloud.com/api/v0002/bulk/devices/add";
+		deviceGetURL = "https://" + org + ".internetofthings.ibmcloud.com/api/v0002/device/types/";
+		
 		
 		//Real Vodafone MAT System
 		vodafoneUserURL = "https://matapi.vodafone.com/UserService.svc/Rest/UserAuthenticate";
@@ -103,15 +112,6 @@ public class VodafoneMAT {
 	}
 	
 	public void doJob() throws InterruptedException, ParseException {
-	
-	
-	// TODO Auto-generated method stub
-
-	//String deviceid = null;
-//	String id[]={"Device01","Device02", "Device03","Device04","Device05"};
-	//String token="token";
-	//String authtoken = null;
-//	String password[]={"qwerty123","QES5NJ2TO8hpFmpaOA","CcXFDmf!qYEOk1Aaqi","i5J1JsjPhu13AzKh2&","UM+OKeBi-wGHtgS2Zy"};
 	
 		initialize();
 	
@@ -131,36 +131,12 @@ public class VodafoneMAT {
 			return;
 		}
 	
-	//Function called to create device type
-	//Devicetype(type, org);
-	
-	//Function called to register devices in Watson IoT Platform Service
-	//RegisterDevices(type, org);
-	
-/*	for(int i=1; i<=NoOfDevices; i++)
-	{
-		if(i<10){	
-			
-			deviceid = "Device0" + i;
-			authtoken = "1Q2w3e4r";
-		}
-		else{
-			deviceid = "Device" + i;
-			authtoken = "qwerty" + i;
-		}*/
-	//	RegisteredDeviceEventPublish.simulateDevice(org, type, deviceID, token, password);
-    // new RegisteredDeviceEventPublish(org, type, deviceid, token, authtoken,(new Double(Math.random()*10)).intValue()+1).run();
-	//}
 }
 
 	private Boolean ReadDeviceStatus(String dNow) {
 		createDevicetype();
 		for(Asset device : deviceList) {
 			String lastrundate=readLastRunDate(device);
-			if (lastrundate.equals(null))
-			{
-				registerDevices(device.getName(), device.getAssetId());
-			}
 			
 			Properties options = new Properties();
 			options.setProperty("org", org);
@@ -198,8 +174,60 @@ public class VodafoneMAT {
 	}
 
 	private String readLastRunDate(Asset device) {
-		// TODO Auto-generated method stub
-		return "10/01/2014";
+		
+		//https://uy6cof.internetofthings.ibmcloud.com/api/v0002/device/types/VodafoneMATAsset/devices/Kurtulus
+		HttpGet httpGet = new HttpGet(deviceGetURL + devicetype + "/devices/" + device.getAssetId());
+
+		httpGet.addHeader("Content-Type", "application/json");
+		httpGet.addHeader("Accept", "application/json");
+		
+		byte[] encoding = Base64.encodeBase64(new String(apikey + ":" + apitoken).getBytes() );			
+		String encodedString = new String(encoding);
+		httpGet.addHeader("Authorization", "Basic " + encodedString);
+		
+		try {
+			
+			SSLContext sslContext = null;
+			try {
+				sslContext = SSLContext.getInstance("TLSv1.2");
+			} catch (NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			try {
+				sslContext.init(null, null, null);
+			} catch (KeyManagementException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			HttpClient client = HttpClientBuilder.create().setSslcontext(sslContext).build();
+			
+			HttpResponse response = client.execute(httpGet);
+			
+			int httpCode = response.getStatusLine().getStatusCode();
+			System.out.println(httpCode);
+			if (httpCode == 404) 
+			{	
+				registerDevices(device.getName(), device.getAssetId());
+				return defaultLastRunDate;
+			}
+			else if (httpCode == 200)
+			{
+				Gson gson = new Gson();
+				Device wiotfdevice = gson.fromJson(VodafoneAssetClient.stream2String(response.getEntity().getContent()), Device.class);
+
+				return wiotfdevice.getMetadata().getLastDataReadDate();
+			}	//
+				
+				
+			
+		}catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return null;
 	}
 
 	private void CheckDeviceList() {
@@ -290,25 +318,7 @@ public static void createDevicetype(){
 
 public static void registerDevices(String deviceName, String deviceID){
 	
-//	String devicebody = "[ { \"typeId\": \"WaterPump\", \"deviceId\": \"Device01\",\"deviceInfo\": { \"serialNumber\": \"string\", \"manufacturer\": \"string\", \"model\": \"string\", \"deviceClass\": \"string\",  \"description\": \"string\", \"fwVersion\": \"string\",\"hwVersion\": \"string\",\"descriptiveLocation\": \"string\"}, \"location\": {\"longitude\": 0, \"latitude\": 0,\"elevation\": 0, \"accuracy\": 0, \"measuredDateTime\": \"2016-05-06T10:23:57.999Z\"  }, \"metadata\": {}, \"authToken\": \"qwerty01\"} ]";
 	String devicebody = null;
-	/*	String deviceid = null;
-	String authtoken = null;
-	String url = null;*/
-	
-/*	for (int i=1; i<=NoOfDevices; i++){
-	
-	if(i<10){	
-	
-		deviceid = "Device0" + i;
-		authtoken = "1Q2w3e4r";
-	}
-	else{
-		deviceid = "Device" + i;
-		authtoken = "qwerty" + i;
-	}
-	*/
-	
 	
 	devicebody = DeviceBody(deviceID, devicetype, devicepassword, deviceName);
 	

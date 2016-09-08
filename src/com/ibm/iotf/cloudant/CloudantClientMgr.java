@@ -141,7 +141,7 @@ public class CloudantClientMgr {
 	}   
 	
 	
-	public static Config getConfig(String configName){
+/*	public static Config getConfig(String configName){
 		
 
     	Database db = null;
@@ -162,7 +162,7 @@ public class CloudantClientMgr {
 		
 		return null;
     	
-    }
+    }*/
     
 /*	public static String readConfigfromCloudant(String configName) {
 		
@@ -212,7 +212,7 @@ public class CloudantClientMgr {
     	
     }*/
     
-    public static Device getDevice(String deviceName){
+/*    public static Device getDevice(String deviceName){
 		
     	Database db = null;
 		try
@@ -231,9 +231,9 @@ public class CloudantClientMgr {
 		
 		return null;
     	
-    }
+    }*/
     
-	public static String readDevicefromCloudant(String deviceName) {
+/*	public static String readDevicefromCloudant(String deviceName) {
 		
 		if (getDevice(deviceName) == null)
 				return null;
@@ -259,9 +259,9 @@ public class CloudantClientMgr {
             System.out.println(exception.getMessage());
         }
     	
-    }
+    }*/
     
-    public static void createDevice(String deviceName, String assetId)
+/*    public static void createDevice(String deviceName, String assetId)
     {
 
     	Device dv = new Device();
@@ -279,7 +279,7 @@ public class CloudantClientMgr {
             System.out.println(exception.getMessage());
         }
     	
-    }
+    }*/
 
 
 	
