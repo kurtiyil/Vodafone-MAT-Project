@@ -27,6 +27,7 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
@@ -102,12 +103,12 @@ public class VodafoneMAT {
 		
 		
 		//Real Vodafone MAT System
-		vodafoneUserURL = "https://matapi.vodafone.com/UserService.svc/Rest/UserAuthenticate";
-		vodafoneAssetURL = "https://matapi.vodafone.com/AssetService.svc/rest";
+		//vodafoneUserURL = "https://matapi.vodafone.com/UserService.svc/Rest/UserAuthenticate";
+		//vodafoneAssetURL = "https://matapi.vodafone.com/AssetService.svc/rest";
 		
 		//Mock Service
-		//vodafoneUserURL = "http://localhost:8080/UserService.svc/Rest/UserAuthenticate";
-		//vodafoneAssetURL = "http://localhost:8080/UserService.svc/Rest";
+		vodafoneUserURL = "http://localhost:8080/UserService.svc/Rest/UserAuthenticate";
+		vodafoneAssetURL = "http://localhost:8080/UserService.svc/Rest";
 		
 	}
 	
@@ -126,10 +127,7 @@ public class VodafoneMAT {
 
 		//Boolean isSuccesfull = ReadDeviceStatus(CloudantClientMgr.readConfigfromCloudant("lastrun"), ft.format(dNow));
 		Boolean isSuccesfull = ReadDeviceStatus(ft.format(cal.getTime()));
-		if (isSuccesfull){
-		//	CloudantClientMgr.updateConfig("lastrun",ft.format(dNow));
-			return;
-		}
+
 	
 }
 
@@ -158,7 +156,7 @@ public class VodafoneMAT {
 					System.out.println("SUCCESSFULLY POSTED TO DEVICE ......"+ device.getAssetId());
 				}
 				myClient.disconnect();
-				updateLastRunDate(device);
+				updateLastRunDate(dNow,device.getAssetId());
 			} catch (Exception e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -168,8 +166,58 @@ public class VodafoneMAT {
 		return true;
 	}
 
-	private void updateLastRunDate(Asset device) {
+	private void updateLastRunDate(String newDate, String assetID) {
 		// TODO Auto-generated method stub
+		
+		String devicebody = null;
+		
+		devicebody = "{\"metadata\": {\"lastDataReadDate\": \"" + newDate + "\"}}";
+		
+		HttpPut httpPut = new HttpPut(deviceGetURL + devicetype + "/devices/" + assetID);
+		StringEntity requestEntity = new StringEntity(
+			    devicebody,
+			    ContentType.APPLICATION_JSON);
+			/*
+			 * Execute the HTTP Request
+			 */
+		
+		httpPut.setEntity(requestEntity);
+		httpPut.addHeader("Content-Type", "application/json");
+		httpPut.addHeader("Accept", "application/json");
+		
+		
+			byte[] encoding = Base64.encodeBase64(new String(apikey + ":" + apitoken).getBytes() );			
+			String encodedString = new String(encoding);
+			httpPut.addHeader("Authorization", "Basic " + encodedString);
+		
+		
+		try {
+			
+			SSLContext sslContext = null;
+			try {
+				sslContext = SSLContext.getInstance("TLSv1.2");
+			} catch (NoSuchAlgorithmException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			try {
+				sslContext.init(null, null, null);
+			} catch (KeyManagementException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			HttpClient client = HttpClientBuilder.create().setSslcontext(sslContext).build();
+			
+			HttpResponse response = client.execute(httpPut);
+			
+			int httpCode = response.getStatusLine().getStatusCode();
+
+			System.out.println(httpCode);
+			}catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				}
 		
 	}
 
@@ -378,7 +426,7 @@ public static String DeviceBody(String deviceid, String devicetype, String autht
 
 	String body = null;
 	
-	body = "[ { \"typeId\": \"" + StringEscapeUtils.escapeJson(devicetype) + "\", \"deviceId\": \"" + StringEscapeUtils.escapeJson(deviceid) + "\",\"deviceInfo\": { \"serialNumber\": \"string\", \"manufacturer\": \"string\", \"model\": \"string\", \"deviceClass\": \"string\",  \"description\": \"" + description +"\", \"fwVersion\": \"string\",\"hwVersion\": \"string\",\"descriptiveLocation\": \"string\"}, \"location\": {\"longitude\": 0, \"latitude\": 0,\"elevation\": 0, \"accuracy\": 0, \"measuredDateTime\": \"2016-05-06T10:23:57.999Z\"  }, \"metadata\": {}, \"authToken\": \"" + StringEscapeUtils.escapeJson(authtoken) + "\"} ]";
+	body = "[ { \"typeId\": \"" + StringEscapeUtils.escapeJson(devicetype) + "\", \"deviceId\": \"" + StringEscapeUtils.escapeJson(deviceid) + "\",\"deviceInfo\": { \"serialNumber\": \"string\", \"manufacturer\": \"string\", \"model\": \"string\", \"deviceClass\": \"string\",  \"description\": \"" + description +"\", \"fwVersion\": \"string\",\"hwVersion\": \"string\",\"descriptiveLocation\": \"string\"}, \"location\": {\"longitude\": 0, \"latitude\": 0,\"elevation\": 0, \"accuracy\": 0, \"measuredDateTime\": \"2016-05-06T10:23:57.999Z\"  }, \"metadata\": { \"lastDataReadDate\" : \"" + defaultLastRunDate + "\"}, \"authToken\": \"" + StringEscapeUtils.escapeJson(authtoken) + "\"} ]";
 	
 	return body;
 }
