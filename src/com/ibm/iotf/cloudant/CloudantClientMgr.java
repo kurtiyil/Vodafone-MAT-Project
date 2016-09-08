@@ -23,6 +23,7 @@ public class CloudantClientMgr {
 	private static String password = null;
 	private static String host = null;
 	private static Config conf=null;
+	private static int index=0;
 	
 	 
 	private static void initClient() {
@@ -142,8 +143,7 @@ public class CloudantClientMgr {
 	
 	public static Config getConfig(String configName){
 		
-		if(conf!=null)
-			return conf;
+
     	Database db = null;
 		try
 		{
@@ -152,8 +152,8 @@ public class CloudantClientMgr {
 			
 			List<Config> config = db.findByIndex("\"selector\": { \"config\": \"" + configName + "\" }", Config.class);
 	        for (Config confs : config) {
-	        	 conf=confs;
-	        	 return conf;
+	        	 //conf=confs;
+	        	 return confs;
 	        }
 		}
 		catch (Exception exception) {
@@ -170,6 +170,7 @@ public class CloudantClientMgr {
 	}*/
 	
 	public static Config readConfigfromCloudant(String configName) {
+		if(conf!=null)	return conf;
 		
     	Database db = null;
 		try
@@ -178,7 +179,9 @@ public class CloudantClientMgr {
 			db = getDB();
 			
 			List<Config> config = db.findByIndex("\"selector\": { \"type\": \"" + configName + "\" }", Config.class);
-	        for (Config conf : config) {
+	        for (Config confs : config) {
+	        	 conf=confs;
+
 	        	return conf;
 	        }
 		}

@@ -74,7 +74,15 @@ public class VodafoneMAT {
 		devicepassword = "passw0rd";
 		devicetoken = "token";
 		
-/*		org = CloudantClientMgr.readConfigfromCloudant("org");
+		org = config.getWiotp().getCredentials().getOrgId();
+		apikey = config.getWiotp().getCredentials().getApiKey();
+		apitoken = config.getWiotp().getCredentials().getApiToken();
+		customerName = config.getMat().getCredentials().getCustomer();
+		username = config.getMat().getCredentials().getUserName();
+		password = config.getMat().getCredentials().getPassword();
+
+		
+		/*		org = CloudantClientMgr.readConfigfromCloudant("org");
 		customerName = CloudantClientMgr.readConfigfromCloudant("customer");
 		username = CloudantClientMgr.readConfigfromCloudant("username");
 		password = CloudantClientMgr.readConfigfromCloudant("password");
@@ -85,12 +93,12 @@ public class VodafoneMAT {
 		deviceAddURL = "https://" + org + ".internetofthings.ibmcloud.com/api/v0002/bulk/devices/add";
 		
 		//Real Vodafone MAT System
-		//vodafoneUserURL = "https://matapi.vodafone.com/UserService.svc/Rest/UserAuthenticate";
-		//vodafoneAssetURL = "https://matapi.vodafone.com/AssetService.svc/rest";
+		vodafoneUserURL = "https://matapi.vodafone.com/UserService.svc/Rest/UserAuthenticate";
+		vodafoneAssetURL = "https://matapi.vodafone.com/AssetService.svc/rest";
 		
 		//Mock Service
-		vodafoneUserURL = "http://localhost:8080/UserService.svc/Rest/UserAuthenticate";
-		vodafoneAssetURL = "http://localhost:8080/UserService.svc/Rest";
+		//vodafoneUserURL = "http://localhost:8080/UserService.svc/Rest/UserAuthenticate";
+		//vodafoneAssetURL = "http://localhost:8080/UserService.svc/Rest";
 		
 	}
 	
