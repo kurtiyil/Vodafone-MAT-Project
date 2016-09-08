@@ -8,6 +8,7 @@ import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -39,6 +40,8 @@ import com.ibm.iotf.client.device.DeviceClient;
 import com.ibm.iotf.cloudant.CloudantClientMgr;
 import com.ibm.iotf.model.Asset;
 import com.ibm.iotf.model.AssetData;
+import com.ibm.iotf.model.AssetlistPerUser;
+import com.ibm.iotf.model.Config;
 import com.ibm.iotf.sample.client.device.RegisteredDeviceEventPublish;
 import com.ibm.iotf.rest.client.*;
 
@@ -53,6 +56,8 @@ public class VodafoneMAT {
 	static String username = null;
 	static String password = null;
 	static String token = null;
+	static String devicepassword = null;
+	static String devicetoken = null;
 	static String apikey = null;
 	static String apitoken = null;
 	static String customerName = null;
@@ -62,17 +67,30 @@ public class VodafoneMAT {
 	
 	private void initialize()
 	{
-		org = CloudantClientMgr.readConfigfromCloudant("org");
+		Config config = CloudantClientMgr.readConfigfromCloudant("**VodafoneMATBridgeConfig**");
+		
+		
 		devicetype="VodafoneMATAsset";
+		devicepassword = "passw0rd";
+		devicetoken = "token";
+		
+/*		org = CloudantClientMgr.readConfigfromCloudant("org");
 		customerName = CloudantClientMgr.readConfigfromCloudant("customer");
 		username = CloudantClientMgr.readConfigfromCloudant("username");
 		password = CloudantClientMgr.readConfigfromCloudant("password");
 		apikey = CloudantClientMgr.readConfigfromCloudant("APIKey");
-		apitoken = CloudantClientMgr.readConfigfromCloudant("APIToken");
+		apitoken = CloudantClientMgr.readConfigfromCloudant("APIToken");*/
+		
 		deviceTypeURL = "https://" + org  + ".internetofthings.ibmcloud.com/api/v0002/device/types";
 		deviceAddURL = "https://" + org + ".internetofthings.ibmcloud.com/api/v0002/bulk/devices/add";
-		vodafoneUserURL = "https://matapi.vodafone.com/UserService.svc/Rest/UserAuthenticate";
-		vodafoneAssetURL ="https://matapi.vodafone.com/AssetService.svc/rest";
+		
+		//Real Vodafone MAT System
+		//vodafoneUserURL = "https://matapi.vodafone.com/UserService.svc/Rest/UserAuthenticate";
+		//vodafoneAssetURL = "https://matapi.vodafone.com/AssetService.svc/rest";
+		
+		//Mock Service
+		vodafoneUserURL = "http://localhost:8080/UserService.svc/Rest/UserAuthenticate";
+		vodafoneAssetURL = "http://localhost:8080/UserService.svc/Rest";
 		
 	}
 	
@@ -91,15 +109,17 @@ public class VodafoneMAT {
 	
 		//System.out.println(customerName);
 		ConnecttoMATPortal();
-		GetDeviveList();
-		CheckDeviceList();
-		Date dNow = new Date();
+		GetDeviceList();
+		//CheckDeviceList();
+		Calendar cal = Calendar.getInstance();
+		cal.add(Calendar.DATE, -1);
 		SimpleDateFormat ft = new SimpleDateFormat ("dd/MM/yyyy");
-		System.out.println("Current Date: " + ft.format(dNow));
+		System.out.println("Yesterday's date = "+ ft.format(cal.getTime()));
+
 		//Boolean isSuccesfull = ReadDeviceStatus(CloudantClientMgr.readConfigfromCloudant("lastrun"), ft.format(dNow));
-		Boolean isSuccesfull = ReadDeviceStatus("10/01/2014", ft.format(dNow));
+		Boolean isSuccesfull = ReadDeviceStatus(ft.format(cal.getTime()));
 		if (isSuccesfull){
-			CloudantClientMgr.updateConfig("lastrun",ft.format(dNow));
+		//	CloudantClientMgr.updateConfig("lastrun",ft.format(dNow));
 			return;
 		}
 	
@@ -125,24 +145,56 @@ public class VodafoneMAT {
 	//}
 }
 
-	private Boolean ReadDeviceStatus(String lastRunDate, String dNow) {
+	private Boolean ReadDeviceStatus(String dNow) {
+		createDevicetype();
 		for(Asset device : deviceList) {
+			String lastrundate=readLastRunDate(device);
+			if (lastrundate.equals(null))
+			{
+				registerDevices(device.getName(), device.getAssetId());
+			}
+			
+			Properties options = new Properties();
+			options.setProperty("org", org);
+			options.setProperty("type", devicetype);
+			options.setProperty("id", device.getAssetId());
+			options.setProperty("auth-method", devicetoken);
+			options.setProperty("auth-token", devicepassword);
+			DeviceClient myClient = null;
 			try {
-				List<AssetData> assetData  = VodafoneAssetClient.assetDataPerDate (vodafoneAssetURL, device.getName(), lastRunDate, dNow, username, token);
+				myClient = new DeviceClient(options);
+				myClient.connect();
+				List<AssetData> assetData  = VodafoneAssetClient.assetDataPerDate (vodafoneAssetURL, device.getName(), lastrundate, dNow, username, token);
 				for (AssetData as : assetData){
 					
+					//Generate a JSON object of the event to be published
+					JsonObject event = new JsonObject();
+				
+					myClient.publishEvent("blink", event, device.getAssetId(), org, devicetype,as);
+					System.out.println("SUCCESSFULLY POSTED TO DEVICE ......"+ device.getAssetId());
 				}
-			} catch (ParserConfigurationException e) {
+				myClient.disconnect();
+				updateLastRunDate(device);
+			} catch (Exception e1) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				e1.printStackTrace();
 			}
 		}	
 		
 		return true;
 	}
 
+	private void updateLastRunDate(Asset device) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private String readLastRunDate(Asset device) {
+		// TODO Auto-generated method stub
+		return "10/01/2014";
+	}
+
 	private void CheckDeviceList() {
-		createDevicetype();
 		for(Asset device : deviceList) {
 			
 			//if (CloudantClientMgr.readDevicefromCloudant(device.getName()) == null) {
@@ -152,7 +204,7 @@ public class VodafoneMAT {
 		}	
 	}
 
-	private void GetDeviveList() {
+	private void GetDeviceList() {
 		try {
 			deviceList=VodafoneAssetClient.assetListPerUser(vodafoneAssetURL, username, token);
 		} catch (ParserConfigurationException e) {
@@ -250,7 +302,7 @@ public static void registerDevices(String deviceName, String deviceID){
 	*/
 	
 	
-	devicebody = DeviceBody(deviceID, devicetype, "passw0rd", deviceName);
+	devicebody = DeviceBody(deviceID, devicetype, devicepassword, deviceName);
 	
 	HttpPost httpPost = new HttpPost(deviceAddURL);
 	StringEntity requestEntity = new StringEntity(

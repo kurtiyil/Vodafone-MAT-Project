@@ -17,6 +17,7 @@ import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.ibm.iotf.client.AbstractClient;
+import com.ibm.iotf.model.AssetData;
 import com.ibm.iotf.util.LoggerUtility;
 
 
@@ -143,8 +144,8 @@ public class DeviceClient extends AbstractClient {
 	 *            Object to be added to the payload as the dataset
 	 * @return Whether the send was successful.
 	 */
-	public boolean publishEvent(String event, Object data, String deviceID, String org, String type) {
-		return publishEvent(event, data, 0, deviceID, org, type);
+	public boolean publishEvent(String event, Object data, String deviceID, String org, String type, AssetData as) {
+		return publishEvent(event, data, 0, deviceID, org, type, as);
 	}
 
 	/**
@@ -160,7 +161,7 @@ public class DeviceClient extends AbstractClient {
 	 *            Quality of Service - should be 0, 1 or 2
 	 * @return Whether the send was successful.
 	 */	
-	public boolean publishEvent(String event, Object data, int qos, String deviceID, String org, String type) {
+	public boolean publishEvent(String event, Object data, int qos, String deviceID, String org, String type, AssetData as) {
 		if (!isConnected()) {
 			return false;
 		}
@@ -172,7 +173,7 @@ public class DeviceClient extends AbstractClient {
 		
 		
 		
-		double temp;
+/*		double temp;
 		
 		double lower_temp = -50.0;
 		double upper_temp = 35.0;
@@ -201,21 +202,22 @@ public class DeviceClient extends AbstractClient {
 		}
 		double pressure = Math.random() * (upper_pressure - lower_pressure) + lower_pressure;
 		
-		double water_usage = Math.random() * (water_usage_higher_value - water_usage_lower_value) + water_usage_lower_value;
+		double water_usage = Math.random() * (water_usage_higher_value - water_usage_lower_value) + water_usage_lower_value;*/
 		//Generate a JSON object of the event to be published
 	//	JsonObject event = new JsonObject();
-		
-		((JsonObject)data).addProperty("PowerSupplyVoltage", "0");
-		((JsonObject)data).addProperty("BatteryVoltage", "0");
-		((JsonObject)data).addProperty("Satelites", "0");
-		((JsonObject)data).addProperty("PositionMethod", "GPS");
-		((JsonObject)data).addProperty("Date", "1/10/2014 5:29:52");
-		((JsonObject)data).addProperty("isRoaming","");
-		((JsonObject)data).addProperty("LatX", "38,0755500000");
-		((JsonObject)data).addProperty("LongY", "23,7784333333");
-		((JsonObject)data).addProperty("LocationString", "Phase 1 test");
-		((JsonObject)data).addProperty("DeviceProfile", "GPS ON");
-		((JsonObject)data).addProperty("PacketType", "GPRS");
+		((JsonObject)data).addProperty("BatteryLevel", as.getBatteryLevel());
+		((JsonObject)data).addProperty("BatteryVoltage", as.getBatteryVoltage());
+		((JsonObject)data).addProperty("Date", as.getDate());
+		((JsonObject)data).addProperty("DeviceProfile", as.getDeviceProfile());
+		((JsonObject)data).addProperty("LatX", as.getLatX());
+		((JsonObject)data).addProperty("LocationString", as.getLocationString());
+		((JsonObject)data).addProperty("LongY", as.getLongY());
+		((JsonObject)data).addProperty("PacketType", as.getPacketType());
+		((JsonObject)data).addProperty("PositionMethod", as.getPositionMethod());
+		((JsonObject)data).addProperty("PowerSupplyVoltage", as.getPowerSupplyVoltage());
+		((JsonObject)data).addProperty("Satelites", as.getSatelites());
+		((JsonObject)data).addProperty("isRoaming", as.getIsRoaming());
+
 			
 		JsonElement dataElement = gson.toJsonTree(data);
 		

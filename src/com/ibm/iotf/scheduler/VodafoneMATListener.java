@@ -49,7 +49,7 @@ import com.ibm.iotf.cloudant.CloudantClientMgr;
 	            
 	            Trigger trigger = TriggerBuilder.newTrigger()
 	                    .withIdentity("VodafoneMATTriggerTrigger", "AlarmJobTriggerGroup")
-	                    .withSchedule(CronScheduleBuilder.cronScheduleNonvalidatedExpression(CloudantClientMgr.readConfigfromCloudant("crontab")))
+	                    .withSchedule(CronScheduleBuilder.cronScheduleNonvalidatedExpression(CloudantClientMgr.readConfigfromCloudant("**VodafoneMATBridgeConfig**").getCrontab()))
 	                    .build();
 	            scheduler = schedulerFactory.getScheduler();
 	            scheduler.start();

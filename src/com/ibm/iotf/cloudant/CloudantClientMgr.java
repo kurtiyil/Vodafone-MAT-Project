@@ -22,7 +22,7 @@ public class CloudantClientMgr {
 	private static String user = null;
 	private static String password = null;
 	private static String host = null;
-
+	private static Config conf=null;
 	
 	 
 	private static void initClient() {
@@ -139,8 +139,11 @@ public class CloudantClientMgr {
 	
 	}   
 	
-    public static Config getConfig(String configName){
+	
+	public static Config getConfig(String configName){
 		
+		if(conf!=null)
+			return conf;
     	Database db = null;
 		try
 		{
@@ -148,8 +151,9 @@ public class CloudantClientMgr {
 			db = getDB();
 			
 			List<Config> config = db.findByIndex("\"selector\": { \"config\": \"" + configName + "\" }", Config.class);
-	        for (Config conf : config) {
-	        	return conf;
+	        for (Config confs : config) {
+	        	 conf=confs;
+	        	 return conf;
 	        }
 		}
 		catch (Exception exception) {
@@ -160,12 +164,32 @@ public class CloudantClientMgr {
     	
     }
     
-	public static String readConfigfromCloudant(String configName) {
+/*	public static String readConfigfromCloudant(String configName) {
 		
 		return getConfig(configName).getValue();
+	}*/
+	
+	public static Config readConfigfromCloudant(String configName) {
+		
+    	Database db = null;
+		try
+		{
+			
+			db = getDB();
+			
+			List<Config> config = db.findByIndex("\"selector\": { \"type\": \"" + configName + "\" }", Config.class);
+	        for (Config conf : config) {
+	        	return conf;
+	        }
+		}
+		catch (Exception exception) {
+            System.out.println(exception.getMessage());
+        }
+		
+		return null;
 	}
     
-    public static void updateConfig(String configName, String newValue)
+/*    public static void updateConfig(String configName, String newValue)
     {
 
     	Config cf = getConfig(configName);
@@ -183,7 +207,7 @@ public class CloudantClientMgr {
             System.out.println(exception.getMessage());
         }
     	
-    }
+    }*/
     
     public static Device getDevice(String deviceName){
 		

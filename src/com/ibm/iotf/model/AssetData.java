@@ -86,6 +86,4 @@ public class AssetData {
 	public void setIsRoaming(String isRoaming) {
 		this.isRoaming = isRoaming;
 	}
-	
-	
 }

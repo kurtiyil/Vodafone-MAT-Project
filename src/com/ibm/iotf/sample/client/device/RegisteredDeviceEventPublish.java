@@ -91,7 +91,7 @@ public class RegisteredDeviceEventPublish implements Runnable {
 //			// TODO Auto-generated catch block
 //			e.printStackTrace();
 //		}
-		myClient.publishEvent("blink", event, deviceID, org, type);
+		myClient.publishEvent("blink", event, deviceID, org, type,null);
 		System.out.println("SUCCESSFULLY POSTED TO DEVICE ......"+ deviceID);
 		myClient.disconnect();
 	//	}
