@@ -83,20 +83,17 @@ public class VodafoneMAT {
 		getCredentialsforIOTPfromVCAP();
 		Config config = CloudantClientMgr.readConfigfromCloudant("**VodafoneMATBridgeConfig**");
 		
-		
 		devicetype="VodafoneMATAsset";
 		devicepassword = "passw0rd";
 		devicetoken = "token";
 		
-		if (org.equals(null)) org = config.getWiotp().getCredentials().getOrgId();
-		if (apikey.equals(null)) apikey = config.getWiotp().getCredentials().getApiKey();
-		if (apitoken.equals(null)) apitoken = config.getWiotp().getCredentials().getApiToken();
+		if (org == null) org = config.getWiotp().getCredentials().getOrgId();
+		if (apikey == null) apikey = config.getWiotp().getCredentials().getApiKey();
+		if (apitoken == null) apitoken = config.getWiotp().getCredentials().getApiToken();
 		customerName = config.getMat().getCredentials().getCustomer();
 		username = config.getMat().getCredentials().getUserName();
 		password = config.getMat().getCredentials().getPassword();
 		defaultLastRunDate = config.getStartDate();
-		
-		
 		
 		/*		org = CloudantClientMgr.readConfigfromCloudant("org");
 		customerName = CloudantClientMgr.readConfigfromCloudant("customer");
