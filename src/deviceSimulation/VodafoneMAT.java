@@ -13,6 +13,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
+import java.util.Map.Entry;
 
 import javax.net.ssl.SSLContext;
 import javax.xml.parsers.ParserConfigurationException;
@@ -36,9 +38,13 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import com.ibm.iotf.util.LoggerUtility;
 import com.ibm.json.java.JSONArray;
 import com.ibm.json.java.JSONObject;
+import com.cloudant.client.api.ClientBuilder;
+import com.cloudant.client.api.CloudantClient;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.ibm.iotf.client.device.DeviceClient;
 import com.ibm.iotf.cloudant.CloudantClientMgr;
 import com.ibm.iotf.model.Asset;
@@ -73,6 +79,8 @@ public class VodafoneMAT {
 	
 	private void initialize()
 	{
+		
+		getCredentialsforIOTPfromVCAP();
 		Config config = CloudantClientMgr.readConfigfromCloudant("**VodafoneMATBridgeConfig**");
 		
 		
@@ -80,9 +88,9 @@ public class VodafoneMAT {
 		devicepassword = "passw0rd";
 		devicetoken = "token";
 		
-		org = config.getWiotp().getCredentials().getOrgId();
-		apikey = config.getWiotp().getCredentials().getApiKey();
-		apitoken = config.getWiotp().getCredentials().getApiToken();
+		if (org.equals(null)) org = config.getWiotp().getCredentials().getOrgId();
+		if (apikey.equals(null)) apikey = config.getWiotp().getCredentials().getApiKey();
+		if (apitoken.equals(null)) apitoken = config.getWiotp().getCredentials().getApiToken();
 		customerName = config.getMat().getCredentials().getCustomer();
 		username = config.getMat().getCredentials().getUserName();
 		password = config.getMat().getCredentials().getPassword();
@@ -131,6 +139,49 @@ public class VodafoneMAT {
 	
 }
 
+	private void getCredentialsforIOTPfromVCAP ()
+	{
+		// VCAP_SERVICES is a system environment variable
+		// Parse it to obtain the  NoSQL DB connection info
+		String VCAP_SERVICES = System.getenv("VCAP_SERVICES");
+		String serviceName = null;
+
+    	if (VCAP_SERVICES != null) {
+
+			// parse the VCAP JSON structure
+			JsonObject obj =  (JsonObject) new JsonParser().parse(VCAP_SERVICES);
+			Entry<String, JsonElement> dbEntry = null;
+			Set<Entry<String, JsonElement>> entries = obj.entrySet();
+			// Look for the VCAP key that holds the cloudant no sql db information
+			for (Entry<String, JsonElement> eachEntry : entries) {				
+				if (eachEntry.getKey().equals("iotf-service")) {
+					dbEntry = eachEntry;
+					break;
+				}
+			}
+			if (dbEntry == null) {			
+				System.out.println("Could not find IOTP key in VCAP_SERVICES env variable"); 
+				return;	
+			}
+
+			obj =(JsonObject) ((JsonArray)dbEntry.getValue()).get(0);		
+			serviceName = (String)dbEntry.getKey();
+			System.out.println("Service Name - " + serviceName);
+
+			obj = (JsonObject) obj.get("credentials");
+
+			org = obj.get("org").getAsString();
+			apikey = obj.get("apiKey").getAsString();
+			apitoken = obj.get("apiToken").getAsString();
+			
+			System.out.println("IOTP Keys Found in VCAP_SERVICES");
+
+		}
+		else {
+			throw new RuntimeException("VCAP_SERVICES not found");
+		}
+
+	}
 	private Boolean ReadDeviceStatus(String dNow) {
 		createDevicetype();
 		for(Asset device : deviceList) {
